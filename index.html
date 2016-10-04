@@ -27,10 +27,20 @@
   pointer-events: none;
 }
 
+/*circle:hover {
+	filter: grayscale(0%);
+	-webkit-filter: grayscale(0%);
+}*/
+
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
+
+//Random images, color based on IUCN status - can average over groups?
+//Make modular functions for levels of hierarchy - show scalability (of the viz and the data)
+//So if taxonomy changes, this can change easily. Automatically updates with web data.
+//And scale to fit.
 
 var margin = 20,
     diameter = 960;
@@ -70,12 +80,14 @@ var svg = d3.select("body").append("svg")
 		  d3.json("https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%20WHERE%20%7B%0A%20%20%3Fitem%20wdt%3AP105%20wd%3AQ2752679%20.%0A%20%20%3Fitem%20wdt%3AP171%20wd%3A"+kname+"%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D", function(e,subs){
 			kingdom = r.results.bindings[index];
 			newObj = {};
-			newObj.name = kingdom.itemLabel.value;
 			newObj.size = subs.results.bindings.length;
+			newObj.name = kingdom.itemLabel.value + "\n" + newObj.size;
+			//add children to this node. zoomable nodes have children. end nodes have a size.
 			childs.push(newObj);
 			tracker++;
+
 			if(tracker === r.results.bindings.length-1){
-				console.log(childs);
+				//console.log(childs);
 				root.children = childs;
 
 			  var focus = root,
@@ -86,6 +98,8 @@ var svg = d3.select("body").append("svg")
 				  .data(nodes)
 				.enter().append("circle")
 				  .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
+				  /*.style("filter", "grayscale(100%)")
+				  .style("-webkit-filter", "grayscale(100%)")*/
 				  .style("fill", function(d) { return d.children ? color(d.depth) : null; })
 				  .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
