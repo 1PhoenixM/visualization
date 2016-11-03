@@ -27,20 +27,40 @@
   pointer-events: none;
 }
 
-/*circle:hover {
+circle:hover {
 	filter: grayscale(0%);
 	-webkit-filter: grayscale(0%);
-}*/
+}
 
 </style>
 <body>
+<title>Taxonomist - Species Visualizer</title>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
 
-//Random images, color based on IUCN status - can average over groups?
-//Make modular functions for levels of hierarchy - show scalability (of the viz and the data)
-//So if taxonomy changes, this can change easily. Automatically updates with web data.
-//And scale to fit.
+//query.replace("----", kingdomName);
+//Replace Q729 with the parameter
+var kingdomsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subKingdomsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%20WHERE%20%7B%0A%20%20%3Fitem%20wdt%3AP105%20wd%3AQ2752679%20.%0A%20%20%3Fitem%20wdt%3AP171%20wd%3A----%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D";
+var phylumsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ38348%20.%0A%3Fitem%20wdt%3AP171%20wd%3AQ729%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subPhylumsQuery = ""; 
+var classesQuery = "";
+var subClassesQuery = "";
+var ordersQuery = "";
+var familiesQuery = "";
+var subFamiliesQuery = "";
+var tribesQuery = "";
+var subTribesQuery = "";
+var genusesQuery = "";
+var subGenusesQuery = "";
+var speciesQuery = "";
+
+function buildData(cb){
+	d3.json(", function(e,r){
+		if (e) throw e;
+		cb(r);
+	});
+}
 
 var margin = 20,
     diameter = 960;
@@ -60,8 +80,12 @@ var svg = d3.select("body").append("svg")
     .attr("height", diameter)
   .append("g")
     .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+;
 
-
+  buildData(function(r){console.log(r);});
+  
+  //working stuff
+  
   d3.json("https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D", function(e,r){
 	  
 	if (e) throw e;
@@ -73,7 +97,6 @@ var svg = d3.select("body").append("svg")
 
 	tracker = 0;
 
-	//console.log(r.results.bindings);
 	r.results.bindings.forEach(function(listItem, index){
 		  kingdom = r.results.bindings[index];
 		  kname = kingdom.item.value.split("/")[4];
@@ -87,7 +110,6 @@ var svg = d3.select("body").append("svg")
 			tracker++;
 
 			if(tracker === r.results.bindings.length-1){
-				//console.log(childs);
 				root.children = childs;
 
 			  var focus = root,
