@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<!-- Melissa Iori -->
+<!-- Visualization Project -->
+<!-- Taxonomist - Species Visualizer -->
+<meta charset="utf-8">
+<style>
+
+.node {
+  cursor: pointer;
+}
+
+.node:hover {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+.node--leaf {
+  fill: white;
+}
+
+.label {
+  font: 11px "Helvetica Neue", Helvetica, Arial, sans-serif;
+  text-anchor: middle;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+}
+
+.label,
+.node--root,
+.node--leaf {
+  pointer-events: none;
+}
+
+#wikiPage {
+	float: right;
+	margin-left: 10%;
+	margin-right: 10%;
+}
+
+#circlePack {
+	padding: 0;
+	margin: 0;
+	display: inline;
+	border-radius: 10%;
+}
+
+h2 {
+	font-family: 'Ubuntu', sans-serif;
+}
+
+</style>
+
+<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+
+<body>
+<title>Taxonomist - Species Visualizer</title>
+<h2>Taxonomist - Species Visualizer</h2>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+//Credits:
+//Asynchronous looping:
+//http://www.richardrodger.com/2011/04/21/node-js-how-to-write-a-for-loop-with-callbacks/#.WDNEYuYrLIU
+//Zoomable Circlepacking:
+//http://bl.ocks.org/mbostock/7607535
+//Images in SVGs:
+//http://fiddle.jshell.net/xhh7a/1/
+//Asynchronous recursion:
+//http://stackoverflow.com/questions/275569/javascript-callback-functions-and-recursion
+
+//The API endpoint for every WikiData call.
+var queryCall = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=";
+
+//The SPARQL queries for different levels of the hierarchy.
+var kingdomsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subKingdomsQuery = "SELECT%20%3Fitem%20%3FitemLabel%20WHERE%20%7B%0A%20%20%3Fitem%20wdt%3AP105%20wd%3AQ2752679%20.%0A%20%20%3Fitem%20wdt%3AP171%20wd%3A----%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D";
+var phylumsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ38348%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subPhylumsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ1153785%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D"; 
+var classesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ37517%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subClassesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ5867051%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var ordersQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36602%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var familiesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ35409%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subFamiliesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ2455704%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var tribesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ227936%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subTribesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ3965313%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var genusesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ34740%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subGenusesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ3238261%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var speciesQuery = "SELECT%20%3Fitem%20%3FitemLabel%20%3Fimage%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ7432%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0AOPTIONAL%20%7B%20%3Fitem%20wdt%3AP18%20%3Fimage%20%7D%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+
+//The correct order for the taxnonomy hierarchy.
+var queryArrayInOrder = [kingdomsQuery, subKingdomsQuery, phylumsQuery, subPhylumsQuery, classesQuery, subClassesQuery, ordersQuery, familiesQuery, subFamiliesQuery, tribesQuery, subTribesQuery, genusesQuery, subGenusesQuery, speciesQuery];
+
+//This asynchronous function takes a SPARQL query q and a callback function cb to call when done.
+//d3.json gets the data from the server and returns JSON as results, r.
+function buildData(q,cb){
+	d3.json(queryCall+q, function(e,r){
+		if (e) throw e;
+		cb(r);
+	});
+}
+
+//The root of the circlepack.
+var myRoot = {"name": "flare", "children": []};
+
+//Need to save the previous and current objects being worked on.
+previousObject = myRoot;
+currentObject = {};
+
+//Dummy objects
+taxons = {results: { bindings: [{item: {value: "default"}}]}};
+currentParent = {};
+lastTaxons = {};
+
+//Creates a new object for each taxon and places it in relation to the root
+function getSpecificTaxon(i,j,taxons){
+	//If still more taxons...
+	if(j < taxons.results.bindings.length){
+		//Add image or not, but construct new object with name
+		if(taxons.results.bindings[j].image !== null){
+			currentObject = {name: taxons.results.bindings[j].itemLabel.value, image: taxons.results.bindings[j].image, children:[], size: 2};
+		}
+		else{
+			currentObject = {name: taxons.results.bindings[j].itemLabel.value, children:[], size: 2};
+		}
+		//Set parent
+		currentParent = taxons;
+		//Add child
+		previousObject.children.push(currentObject);
+		//Keep going until no more taxons
+		getSpecificTaxon(i,j+1,taxons);
+	}
+}
+
+//Gets data for the whole hierarchy in order
+//i is the level index (kingdom, phylum etc) and j is the taxon index, since there can be multiple phylums under a kingdom, etc
+function getTaxon(i,j,taxons){
+	//If still more levels
+	if(i < queryArrayInOrder.length){
+		//Make the next query 
+		query = queryArrayInOrder[i].replace("----", taxons.results.bindings[j].item.value.split("/")[4]);
+		//Do object creation here if at level 1
+		if(i === 1){
+			currentObject = {name: taxons.results.bindings[j].itemLabel.value, children:[], size: 2};
+			previousObject.children.push(currentObject);
+			previousObject = currentObject;
+		}
+		//Get the next level of taxons
+		buildData(query, function(new_taxons){
+			//If there are any taxons
+			if(new_taxons.results.bindings.length > 0){
+				//Create an object for each
+				getSpecificTaxon(i,0,new_taxons);
+				
+				//The current object now becomes the previous - climbing back up the tree
+				previousObject = currentObject;
+				/*for(k = 0; k < new_taxons.results.bindings.length; k++){
+					getTaxon(i,k,new_taxons);
+				}*/
+				
+				//Recursively call with the next query
+				getTaxon(i+1,0,new_taxons);
+			}
+			else{
+				//Set parent and recursively call
+				new_taxons = currentParent;
+				getTaxon(i+1,0,new_taxons);
+			}
+		});
+	}
+	else{
+		//If no more levels, render the circlepack
+		//console.log(myRoot);
+		renderViz(myRoot);
+	}
+}
+
+//Renders the circlepack  
+function renderViz(root){
+  
+				var margin = 20,
+					diameter = 650; //960
+
+				var color = d3.scale.linear()
+					.domain([-1, 5])
+					.range(["hsl(96,80%,50%)", "hsl(100,30%,35%)"])
+					.interpolate(d3.interpolateHcl);
+
+				var pack = d3.layout.pack()
+					.padding(2)
+					.size([diameter - margin, diameter - margin])
+					.value(function(d) { return d.size; })	
+					
+				var svg = d3.select("body").append("svg")
+					.attr("width", diameter)
+					.attr("height", diameter)
+					.attr("id", "circlePack");
+				
+				//Image patterns are needed to fill circles
+				d3.select("svg").append("defs")
+					.append("pattern")
+						.attr("id", "image1")
+						.attr("patternContentUnits", "objectBoundingBox")
+						.attr("height", "100%")
+						.attr("width", "100%")
+						.append("image")
+							.attr("height", 1)
+							.attr("width", 1)
+							.attr("preserveAspectRatio", "none")
+							.attr("xlink:href", "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/DickinsoniaCostata.jpg/220px-DickinsoniaCostata.jpg");
+					
+				svg = d3.select("svg").append("g")
+					.attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+				;
+				
+				  var focus = root,
+				  nodes = pack.nodes(root),
+				  view;
+				  
+
+			  var circle = svg.selectAll("circle")
+				  .data(nodes)
+				.enter().append("circle")
+				  .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
+				  .style("fill", function(d) { return d.children ? color(d.depth) : "url(#image1)" }) //if(d.image){return "url(#image1)"} else if(d.children) {return color(d.depth)} else {return null;}  
+				  .on("click", function(d) { 
+						document.getElementById('wikiPage').src = "http://en.m.wikipedia.org/wiki/" + d.name.replace(" ", "+"); 
+						if (focus !== d) zoom(d), d3.event.stopPropagation(); 
+					});
+
+			  var text = svg.selectAll("text")
+				  .data(nodes)
+				.enter().append("text")
+				  .attr("class", "label")
+				  .style("fill-opacity", function(d) { return d.parent === root ? 1 : 0; })
+				  .style("display", function(d) { return d.parent === root ? "inline" : "none"; })
+				  .text(function(d) { return d.name; });
+
+			  var node = svg.selectAll("circle,text");
+
+			  d3.select("body")
+				  .style("background", color(-1))
+				  .on("click", function() { zoom(root); });
+
+			  zoomTo([root.x, root.y, root.r * 2 + margin]);
+			  
+			  var iframe = d3.select("body").append("iframe")
+				.attr("src", "http://en.m.wikipedia.org/wiki/Species")
+				.attr("id", "wikiPage")
+				.style("height", "440px")
+				.style("width", "400px")
+				.style("position", "relative")
+				.style("display", "inline")
+				.style("border-radius", "5%");
+
+			  function zoom(d) {
+				iframe.src = d.item;
+				var focus0 = focus; focus = d;
+
+				var transition = d3.transition()
+					.duration(d3.event.altKey ? 7500 : 750)
+					.tween("zoom", function(d) {
+					  var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
+					  return function(t) { zoomTo(i(t)); };
+					});
+
+				transition.selectAll("text")
+				  .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+					.style("fill-opacity", function(d) { return d.parent === focus ? 1 : 0; })
+					.each("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+					.each("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+			  }
+
+			  function zoomTo(v) {
+				var k = diameter / v[2]; view = v;
+				node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+				circle.attr("r", function(d) { return d.r * k; });
+			  }
+
+			d3.select(self.frameElement).style("height", diameter + "px");
+  }	
+  
+//Calls buildData with the very first query, to get all the kingdoms.
+//When done, calls getTaxon to run the query chain and render the viz.
+buildData(queryArrayInOrder[0], function(kingdoms){
+	getTaxon(1,0,kingdoms);
+});
+	
+</script>

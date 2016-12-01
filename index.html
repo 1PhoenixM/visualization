@@ -38,36 +38,205 @@ circle:hover {
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
 
-//query.replace("----", kingdomName);
-//Replace Q729 with the parameter
-var kingdomsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
-var subKingdomsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%20WHERE%20%7B%0A%20%20%3Fitem%20wdt%3AP105%20wd%3AQ2752679%20.%0A%20%20%3Fitem%20wdt%3AP171%20wd%3A----%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D";
-var phylumsQuery = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ38348%20.%0A%3Fitem%20wdt%3AP171%20wd%3AQ729%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
-var subPhylumsQuery = ""; 
-var classesQuery = "";
-var subClassesQuery = "";
-var ordersQuery = "";
-var familiesQuery = "";
-var subFamiliesQuery = "";
-var tribesQuery = "";
-var subTribesQuery = "";
-var genusesQuery = "";
-var subGenusesQuery = "";
-var speciesQuery = "";
+//Credit for async trick:
+//http://www.richardrodger.com/2011/04/21/node-js-how-to-write-a-for-loop-with-callbacks/#.WDNEYuYrLIU
 
-function buildData(cb){
-	d3.json(", function(e,r){
+var queryCall = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=";
+//query.replace("----", param);
+var kingdomsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subKingdomsQuery = "SELECT%20%3Fitem%20%3FitemLabel%20WHERE%20%7B%0A%20%20%3Fitem%20wdt%3AP105%20wd%3AQ2752679%20.%0A%20%20%3Fitem%20wdt%3AP171%20wd%3A----%20.%0A%20%20SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22.%20%7D%0A%7D";
+var phylumsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ38348%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subPhylumsQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ1153785%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D"; 
+var classesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ37517%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subClassesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ5867051%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var ordersQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36602%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var familiesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ35409%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subFamiliesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ2455704%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var tribesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ227936%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subTribesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ3965313%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var genusesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ34740%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var subGenusesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ3238261%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+var speciesQuery = "SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ7432%20.%0A%3Fitem%20wdt%3AP171%20wd%3A----%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D";
+
+var queryArrayInOrder = [kingdomsQuery, subKingdomsQuery, phylumsQuery, subPhylumsQuery, classesQuery, subClassesQuery, ordersQuery, familiesQuery, subFamiliesQuery, tribesQuery, subTribesQuery, genusesQuery, subGenusesQuery, speciesQuery];
+
+function buildData(q,cb){
+	d3.json(queryCall+q, function(e,r){
 		if (e) throw e;
 		cb(r);
 	});
 }
+
+var lastResults = [];
+var myRoot = {"name": "flare", "children": []};
+
+//Can't change the query parameter from inside the callback. The next calls depend on the previous ones.
+/*queryArrayInOrder.forEach(function(query,index){
+		//query = query.replace("----", lastResults.results.bindings[index].item.value.split("/")[4]);
+		buildData(query, lastResults, function(returnedList,lastList){
+			lastResults = lastList;
+			query = query.replace("----", lastResults.results.bindings[index].item.value.split("/")[4]);
+			returnedList.results.bindings.forEach(function(taxon,index){
+				if(index === 0){
+					var aTaxon = {};
+					aTaxon.children = [];
+					myRoot[taxon.itemLabel.value] = aTaxon;
+				}
+				else{
+					myRoot[lastResults.results.bindings[index].item.value.split("/")[4]].children.push(taxon.itemLabel.value);
+					myRoot = myRoot[lastResults.results.bindings[index].item.value.split("/")[4]].children;
+				}
+			});
+			console.log(myRoot);
+		});
+});*/
+
+//Build data first. Once entire JSON is built via data, render SVG like normal after the final callback. (spinner?)
+/*buildData(kingdomsQuery, function(kingdoms){
+	console.log(kingdoms);
+	kingdoms.results.bindings.forEach(function(item1,index1){
+		console.log(kingdoms.results.bindings[index1].itemLabel.value);
+		kingdomObject = {name: kingdoms.results.bindings[index1].itemLabel.value, children: []};
+		specificSubKingdomsQuery = subKingdomsQuery.replace("----", kingdoms.results.bindings[index1].item.value.split("/")[4]);
+		buildData(specificSubKingdomsQuery, function(subKingdoms){
+			subKingdoms.results.bindings.forEach(function(item2,index2){
+				subKingdomObject = {name: subKingdoms.results.bindings[index2].itemLabel.value, size: 2};
+				kingdomObject.children.push(subKingdomObject);
+				if(index2 === subKingdoms.results.bindings.length-1){
+					console.log(kingdomObject);
+					myRoot.children.push(kingdomObject);
+					if(index1 !== kingdoms.results.bindings.length-1){
+						kingdomObject = {name: kingdoms.results.bindings[index1+1].itemLabel.value, children: []};
+					}
+				}
+				if(index1 === kingdoms.results.bindings.length-1 && (subKingdoms.results.bindings.length === 0 || index2 === subKingdoms.results.bindings.length-1)){
+					renderViz(myRoot);
+				}
+				specificPhylumsQuery = phylumsQuery.replace("----", subKingdoms.results.bindings[index2].item.value.split("/")[4]);
+				/*buildData(specificPhylumsQuery, myRoot, function(phylums){
+					phylums.results.bindings.forEach(function(item,index){
+						specificSubPhylumsQuery = subPhylumsQuery.replace("----", phylums.results.bindings[index].item.value.split("/")[4]);
+						buildData(specificSubPhylumsQuery, myRoot, function(subPhylums){
+							subPhylums.results.bindings.forEach(function(item,index){
+								specificClassesQuery = classesQuery.replace("----", subPhylums.results.bindings[index].item.value.split("/")[4]);
+								buildData(specificClassesQuery, myRoot, function(classes){
+									classes.results.bindings.forEach(function(item,index){
+										specificSubClassesQuery = subClassesQuery.replace("----", classes.results.bindings[index].item.value.split("/")[4]);
+										buildData(specificSubClassesQuery, myRoot, function(subClasses){
+											subClasses.results.bindings.forEach(function(item,index){
+												specificOrdersQuery = ordersQuery.replace("----", subClasses.results.bindings[index].item.value.split("/")[4]);
+												buildData(specificOrdersQuery, myRoot, function(orders){
+													orders.results.bindings.forEach(function(item,index){
+														specificFamiliesQuery = familiesQuery.replace("----", orders.results.bindings[index].item.value.split("/")[4]);
+														buildData(specificFamiliesQuery, myRoot, function(families){
+															families.results.bindings.forEach(function(item,index){
+																specificSubFamiliesQuery = subFamiliesQuery.replace("----", families.results.bindings[index].item.value.split("/")[4]);
+																buildData(specificSubFamiliesQuery, myRoot, function(subFamilies){
+																	subFamilies.results.bindings.forEach(function(item,index){
+																		specificTribesQuery = tribesQuery.replace("----", subFamilies.results.bindings[index].item.value.split("/")[4]);
+																		buildData(specificTribesQuery, myRoot, function(tribes){
+																			tribes.results.bindings.forEach(function(item,index){
+																				specificSubTribesQuery = subTribesQuery.replace("----", tribes.results.bindings[index].item.value.split("/")[4]);
+																				buildData(specificSubTribesQuery, myRoot, function(subTribes){
+																					subTribes.results.bindings.forEach(function(item,index){
+																						specificGenusesQuery = genusesQuery.replace("----", subTribes.results.bindings[index].item.value.split("/")[4]);
+																						buildData(specificGenusesQuery, myRoot, function(genuses){
+																							genuses.results.bindings.forEach(function(item,index){
+																								specificSubGenusesQuery = subGenusesQuery.replace("----", genuses.results.bindings[index].item.value.split("/")[4]);
+																								buildData(specificSubGenusesQuery, myRoot, function(subGenuses){
+																									subGenuses.results.bindings.forEach(function(item,index){
+																										specificSpeciesQuery = speciesQuery.replace("----", subGenuses.results.bindings[index].item.value.split("/")[4]);
+																										buildData(specificSpeciesQuery, myRoot, function(species){
+																											kingdom = kingdoms.results.bindings[index].itemLabel.value;
+																											subKingdom = subKingdoms.results.bindings[index].itemLabel.value;
+																											phylum = phylums.results.bindings[index].itemLabel.value;
+																											subPhylum = subPhylums.results.bindings[index].itemLabel.value;
+																											aClass = classes.results.bindings[index].itemLabel.value;
+																											subClass = subClasses.results.bindings[index].itemLabel.value;
+																											order = orders.results.bindings[index].itemLabel.value;
+																											subOrder = subOrders.results.bindings[index].itemLabel.value;
+																											family = families.results.bindings[index].itemLabel.value;
+																											subFamily = subFamilies.results.bindings[index].itemLabel.value;
+																											tribe = tribes.results.bindings[index].itemLabel.value;
+																											subTribe = subTribes.results.bindings[index].itemLabel.value;
+																											genus = genuses.results.bindings[index].itemLabel.value;
+																											subGenus = subGenuses.results.bindings[index].itemLabel.value;
+																											species = species.results.bindings[index].itemLabel.value;
+																											myRoot[kingdom][subKingdom][phylum][subPhylum][aClass][subClass][order][subOrder][family][subFamily][tribe][subTribe][genus][subGenus].push(species);
+																											renderViz(myRoot);
+																										});
+																									});
+																								});
+																							});
+																						});
+																					});
+																				});
+																			});
+																		});
+																	});
+																});
+															});
+														});
+													});
+												});
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				});//close
+			});
+		});
+	});
+});*/
+
+//could do one query to get all the data in one shot?
+previousObject = myRoot;
+currentObject = {};
+
+function getSpecificTaxon(i,j,taxons){
+	if(j < taxons.results.bindings.length){
+		queryArrayInOrder[i+1] = queryArrayInOrder[i+1].replace("----", taxons.results.bindings[j].item.value.split("/")[4]);
+		currentObject = {name: taxons.results.bindings[j].itemLabel.value, children:[]};
+		previousObject.children.push(currentObject);
+		getSpecificTaxon(i,j+1,taxons);
+	}
+}
+
+function getTaxon(i){
+	if(i < queryArrayInOrder.length){
+		buildData(queryArrayInOrder[i], function(taxons){
+			if(taxons.results.bindings.length > 0){
+				getSpecificTaxon(i,0,taxons);
+				previousObject = currentObject;
+				getTaxon(i+1);
+			}
+			else{
+				i = queryArrayInOrder.length; //break
+				previousObject.size = 2;
+				console.log(myRoot);
+				renderViz(myRoot);
+			}
+		});
+	}
+	else{
+		renderViz(previousObject);
+	}
+}
+buildData(queryArrayInOrder[0], function(kingdoms){  
+	getTaxon(0);
+});
+  
+//working stuff under this line
 
 var margin = 20,
     diameter = 960;
 
 var color = d3.scale.linear()
     .domain([-1, 5])
-    .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+    .range(["hsl(96,80%,50%)", "hsl(100,30%,35%)"])
     .interpolate(d3.interpolateHcl);
 
 var pack = d3.layout.pack()
@@ -82,11 +251,9 @@ var svg = d3.select("body").append("svg")
     .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 ;
 
-  buildData(function(r){console.log(r);});
+var iframe = d3.select("body").append("iframe");
   
-  //working stuff
-  
-  d3.json("https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D", function(e,r){
+  /*d3.json("https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP105%20wd%3AQ36732%20.%20%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%7D%0A%7D", function(e,r){
 	  
 	if (e) throw e;
 
@@ -120,8 +287,8 @@ var svg = d3.select("body").append("svg")
 				  .data(nodes)
 				.enter().append("circle")
 				  .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
-				  /*.style("filter", "grayscale(100%)")
-				  .style("-webkit-filter", "grayscale(100%)")*/
+				  .style("filter", "grayscale(100%)")
+				  .style("-webkit-filter", "grayscale(100%)")
 				  .style("fill", function(d) { return d.children ? color(d.depth) : null; })
 				  .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
@@ -169,6 +336,62 @@ var svg = d3.select("body").append("svg")
 		  });
 	});
   });
+  */
+  
+  function renderViz(root){
+				  var focus = root,
+				  nodes = pack.nodes(root),
+				  view;
+
+			  var circle = svg.selectAll("circle")
+				  .data(nodes)
+				.enter().append("circle")
+				  .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
+				  .style("fill", function(d) { return d.children ? color(d.depth) : null; }) //d.image
+				  .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
+
+			  var text = svg.selectAll("text")
+				  .data(nodes)
+				.enter().append("text")
+				  .attr("class", "label")
+				  .style("fill-opacity", function(d) { return d.parent === root ? 1 : 0; })
+				  .style("display", function(d) { return d.parent === root ? "inline" : "none"; })
+				  .text(function(d) { return d.name; });
+
+			  var node = svg.selectAll("circle,text");
+
+			  d3.select("body")
+				  .style("background", color(-1))
+				  .on("click", function() { zoom(root); });
+
+			  zoomTo([root.x, root.y, root.r * 2 + margin]);
+
+			  function zoom(d) {
+				iframe.src = d.item;
+				var focus0 = focus; focus = d;
+
+				var transition = d3.transition()
+					.duration(d3.event.altKey ? 7500 : 750)
+					.tween("zoom", function(d) {
+					  var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
+					  return function(t) { zoomTo(i(t)); };
+					});
+
+				transition.selectAll("text")
+				  .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+					.style("fill-opacity", function(d) { return d.parent === focus ? 1 : 0; })
+					.each("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+					.each("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+			  }
+
+			  function zoomTo(v) {
+				var k = diameter / v[2]; view = v;
+				node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+				circle.attr("r", function(d) { return d.r * k; });
+			  }
+
+			d3.select(self.frameElement).style("height", diameter + "px");
+  }
 
 	/*for(i in r.results.bindings){
 		kingdom = r.results.bindings[i];
