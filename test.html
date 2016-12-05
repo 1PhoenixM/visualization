@@ -110,19 +110,22 @@ taxons = {results: { bindings: [{item: {value: "default"}}]}};
 currentParent = {};
 lastTaxons = {};
 
+kingdoms_root = {};
+counter = 0;
+
 //Creates a new object for each taxon and places it in relation to the root
 function getSpecificTaxon(i,j,taxons){
 	//If still more taxons...
 	if(j < taxons.results.bindings.length){
 		//Add image or not, but construct new object with name
 		if(taxons.results.bindings[j].image !== null){
-			currentObject = {name: taxons.results.bindings[j].itemLabel.value, image: taxons.results.bindings[j].image, children:[], size: 2};
+			currentObject = {name: taxons.results.bindings[j].itemLabel.value, specificName: taxons.results.bindings[j].item.value, image: taxons.results.bindings[j].image, children:[], size: 2};
 		}
 		else{
-			currentObject = {name: taxons.results.bindings[j].itemLabel.value, children:[], size: 2};
+			currentObject = {name: taxons.results.bindings[j].itemLabel.value, specificName: taxons.results.bindings[j].item.value, children:[], size: 2};
 		}
 		//Set parent
-		currentParent = taxons;
+		currentParent = previousObject;
 		//Add child
 		previousObject.children.push(currentObject);
 		//Keep going until no more taxons
@@ -134,37 +137,53 @@ function getSpecificTaxon(i,j,taxons){
 //i is the level index (kingdom, phylum etc) and j is the taxon index, since there can be multiple phylums under a kingdom, etc
 function getTaxon(i,j,taxons){
 	//If still more levels
-	if(i < queryArrayInOrder.length){
-		//Make the next query 
-		query = queryArrayInOrder[i].replace("----", taxons.results.bindings[j].item.value.split("/")[4]);
-		//Do object creation here if at level 1
-		if(i === 1){
-			currentObject = {name: taxons.results.bindings[j].itemLabel.value, children:[], size: 2};
-			previousObject.children.push(currentObject);
-			previousObject = currentObject;
-		}
-		//Get the next level of taxons
-		buildData(query, function(new_taxons){
-			//If there are any taxons
-			if(new_taxons.results.bindings.length > 0){
-				//Create an object for each
-				getSpecificTaxon(i,0,new_taxons);
-				
-				//The current object now becomes the previous - climbing back up the tree
-				previousObject = currentObject;
-				/*for(k = 0; k < new_taxons.results.bindings.length; k++){
-					getTaxon(i,k,new_taxons);
-				}*/
-				
-				//Recursively call with the next query
-				getTaxon(i+1,0,new_taxons);
+	if(i < queryArrayInOrder.length && counter < 30){
+			counter++;
+			if("results" in taxons && j < taxons.results.bindings.length){
+				//Make the next query 
+				query = queryArrayInOrder[i].replace("----", taxons.results.bindings[j].item.value.split("/")[4]);
 			}
-			else{
-				//Set parent and recursively call
-				new_taxons = currentParent;
-				getTaxon(i+1,0,new_taxons);
-			}
-		});
+			else if("specificName" in taxons){
+				query = queryArrayInOrder[i].replace("----", taxons.specificName.split("/")[4]);
+			}	
+			//Do object creation here if at level 1
+			/*if(i === 1 && j < taxons.results.bindings.length){
+				currentObject = {name: taxons.results.bindings[j].itemLabel.value, specificName: taxons.results.bindings[j].item.value, children:[], size: 2};
+				previousObject.children.push(currentObject);
+				currentObject = previousObject;
+			}*/
+			//Get the next level of taxons
+			buildData(query, function(new_taxons){
+				//console.log(i);
+				//console.log(new_taxons);
+				//If there are any taxons
+				if(new_taxons.results.bindings.length > 0){
+					//Create an object for each
+					getSpecificTaxon(i,0,new_taxons);
+					
+					//The current object now becomes the previous - climbing back up the tree
+					previousObject = currentObject;
+					/*for(k = 0; k < new_taxons.results.bindings.length; k++){
+						getTaxon(i,k,new_taxons);
+					}*/
+					
+					lastTaxons = new_taxons;
+					//Recursively call with the next query
+					getTaxon(i+1,j,new_taxons);
+				}
+				else{
+					//console.log(new_taxons);
+					//Set parent and recursively call
+					//currentObject = previousObject;
+					if(i > 2){
+						//console.log("Got here");
+						getTaxon(i-1,j+1,currentObject); //i-1
+					}
+					else{
+						getTaxon(i+1,j,new_taxons);
+					}
+				}
+			});
 	}
 	else{
 		//If no more levels, render the circlepack
@@ -281,6 +300,7 @@ function renderViz(root){
 //Calls buildData with the very first query, to get all the kingdoms.
 //When done, calls getTaxon to run the query chain and render the viz.
 buildData(queryArrayInOrder[0], function(kingdoms){
+	kingdoms_root = kingdoms;
 	getTaxon(1,0,kingdoms);
 });
 	
