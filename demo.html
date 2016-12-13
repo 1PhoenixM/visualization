@@ -194,19 +194,32 @@ function renderViz(root){
 					.attr("height", diameter)
 					.attr("id", "circlePack");
 				
+				var ids = ['Metazoa', 'Bilateria', 'Eumetazoa', 'Dipleurozoa', 'Dickinsoniidae', 'Dickinsonia-lissa', 'Dickinsonia-brachina', 'Dickinsonia-costata'];
+				var imgs = 
+				[
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Animal_diversity.png/350px-Animal_diversity.png",
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Amia_calva1.jpg/225px-Amia_calva1.jpg",
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Branchiostoma_lanceolatum.jpg/250px-Branchiostoma_lanceolatum.jpg",
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Andiva_ivantsovi.jpg/250px-Andiva_ivantsovi.jpg",
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/DickinsoniaCostata3.png/220px-DickinsoniaCostata3.png",
+				"http://www2.humboldt.edu/natmus/lifeThroughTime/PreCam.web/Dicken_L17.JPG",
+				"https://www.researchgate.net/profile/Enrico_Bonino/publication/261413557/viewer/AS:102301431762955@1401401970525/background/45.png",
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/DickinsoniaCostata.jpg/220px-DickinsoniaCostata.jpg"
+				];
 				//Image patterns are needed to fill circles
-				d3.select("svg").append("defs")
-					.append("pattern")
-						.attr("id", "image1")
-						.attr("patternContentUnits", "objectBoundingBox")
-						.attr("height", "100%")
-						.attr("width", "100%")
-						.append("image")
-							.attr("height", 1)
-							.attr("width", 1)
-							.attr("preserveAspectRatio", "none")
-							.attr("xlink:href", "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/DickinsoniaCostata.jpg/220px-DickinsoniaCostata.jpg");
-					
+				for(i = 0; i < ids.length; i++){
+					d3.select("svg").append("defs")
+						.append("pattern")
+							.attr("id", ids[i])
+							.attr("patternContentUnits", "objectBoundingBox")
+							.attr("height", "100%")
+							.attr("width", "100%")
+							.append("image")
+								.attr("height", 1)
+								.attr("width", 1)
+								.attr("preserveAspectRatio", "none")
+								.attr("xlink:href", imgs[i]);
+				}
 				svg = d3.select("svg").append("g")
 					.attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
 				;
@@ -220,7 +233,7 @@ function renderViz(root){
 				  .data(nodes)
 				.enter().append("circle")
 				  .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
-				  .style("fill", function(d) { return d.children ? color(d.depth) : "url(#image1)" }) //if(d.image){return "url(#image1)"} else if(d.children) {return color(d.depth)} else {return null;}  
+				  .style("fill", function(d) { return d.children ? color(d.depth) : "url(#"+d.name.replace(" ", "-")+")" }) //if(d.image){return "url(#image1)"} else if(d.children) {return color(d.depth)} else {return null;}  
 				  .on("click", function(d) { 
 						document.getElementById('wikiPage').src = "https://en.m.wikipedia.org/wiki/" + d.name.replace(" ", "+"); 
 						if (focus !== d) zoom(d), d3.event.stopPropagation(); 
@@ -232,7 +245,11 @@ function renderViz(root){
 				  .attr("class", "label")
 				  .style("fill-opacity", function(d) { return d.parent === root ? 1 : 0; })
 				  .style("display", function(d) { return d.parent === root ? "inline" : "none"; })
-				  .text(function(d) { return d.name; });
+				  .text(function(d) { return d.name; })
+				  .on("click", function(d) { 
+						document.getElementById('wikiPage').src = "https://en.m.wikipedia.org/wiki/" + d.name.replace(" ", "+"); 
+						if (focus !== d) zoom(d), d3.event.stopPropagation(); 
+					});
 
 			  var node = svg.selectAll("circle,text");
 
